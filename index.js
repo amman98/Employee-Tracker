@@ -48,6 +48,7 @@ function trackEmployees() {
 function getAllDepartments() {
     db.query('SELECT * FROM department', function(err, results) {
         console.table(results);
+        if(err) throw err;
         trackEmployees(); // recursively call trackEmployees()
     });
 }
@@ -64,6 +65,7 @@ function addDepartment() {
         ]).then(ans => {
             db.query('INSERT INTO department (name) VALUES (?)', ans.name, function(err, results) {
                 console.log("Added " + ans.name + " to the database");
+                if(err) throw err;
                 trackEmployees(); // recursively call trackEmployees()
             });
         })
@@ -73,17 +75,17 @@ function addDepartment() {
 function getAllRoles() {
     db.query('SELECT role.id, role.title, department.name, role.salary FROM role JOIN department ON role.department_id = department.id', function(err, results) {
         console.table(results);
+        if(err) throw err;
         trackEmployees(); // recursively call trackEmployees()
     });
 }
 
 // adds a role to the role table
-/*
 function addRole() {
     // extract all department names
-    db,query('SELECT name FROM department', function(err, results) {
+    db.query('SELECT name FROM department', function(err, results) {
         const departmentNames = results.map(row => row.name);
-
+        console.log(departmentNames);
         inquirer
         .prompt([
             {
@@ -99,26 +101,25 @@ function addRole() {
             {
                 type: "list",
                 message: "Which department does the role belong to?",
-                choices: [departmentNames],
+                choices: departmentNames,
                 name: "depName",
             }
         ]).then(ans => {
-            db.query(`SELECT id FROM role WHERE name = ${ans.depName}`, function(err, results) {
-
-            });
-
-            db.query('INSERT INTO role (title, salary, department_id) VALUES (?)', [ans.title, ans.salary], function(err, results) {
+            db.query('INSERT INTO role (title, salary, department_id) VALUES (?, ?, (SELECT id FROM department WHERE name = ?))', [ans.title, ans.salary, ans.depName], function(err, results) {
                 console.log("Added " + ans.title + " to the database");
+                if(err) throw err;
                 trackEmployees(); // recursively call trackEmployees()
             });
         })
     });
-}*/
+}
 
 // retrieves all rows in the employees table
 function getAllEmployees() {
+    // used ChatGPT to get the syntax for concatenating the manager first and last names into one column
     db.query('SELECT employee.id, employee.first_name, employee.last_name, role.title, department.name, role.salary, CONCAT_WS(" ", m.first_name, m.last_name) AS manager FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id LEFT JOIN employee m ON employee.manager_id = m.id', function(err, results) {
         console.table(results);
+        if(err) throw err;
         trackEmployees(); // recursively call trackEmployees()
     });
 }
