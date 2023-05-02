@@ -166,7 +166,12 @@ function addEmployee() {
                 ]).then(ans => {
                     db.query('SELECT id FROM employee WHERE CONCAT(first_name, " ", last_name) = ?', [ans.managerName], function(err, results) {
                         if(err) throw err;
-                        const managerId = results[0].id;
+                        if(ans.managerName == "None") {
+                            managerId = null;
+                        }
+                        else {
+                            const managerId = results[0].id;
+                        }
 
                         db.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, (SELECT id FROM role WHERE title = ?), ?)', [ans.firstName, ans.lastName, ans.roleTitle, managerId], function(err, results) {
                             console.log("Added " + ans.firstName + " " + ans.lastName + " to the database");
