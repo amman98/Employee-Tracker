@@ -199,6 +199,11 @@ function addEmployee() {
 function updateEmployeeRole() {
     db.query('SELECT CONCAT(first_name, " ", last_name) AS name FROM employee', function(err, results) {
         const employeeNames = results.map(row => row.name);
+        if(employeeNames.length === 0) {
+            console.log("Can't update employee as there are no employees in database.");
+            trackEmployees(); // can't add role if no department to add to
+            return;
+        }
 
         db.query('SELECT title FROM role', function(err, results) {
             const roleTitles = results.map(row => row.title);
