@@ -91,6 +91,12 @@ function addRole() {
     // extract all department names
     db.query('SELECT name FROM department', function(err, results) {
         const departmentNames = results.map(row => row.name);
+        if(departmentNames.length === 0) {
+            console.log("Can't add role as there are no departments to add them too.");
+            trackEmployees(); // can't add role if no department to add to
+            return;
+        }
+
         inquirer
             .prompt([
                 {
@@ -134,7 +140,12 @@ function addEmployee() {
     // extract all role titles
     db.query('SELECT title FROM role', function(err, results) {
         const roleTitles = results.map(row => row.title);
-        
+        if(roleTitles.length === 0) {
+            console.log("Can't add employee as there are no roles to add them too.");
+            trackEmployees(); // can't add role if no department to add to
+            return;
+        }
+
         db.query('SELECT CONCAT(first_name, " ", last_name) AS name FROM employee', function(err, results) {
             const managerNames = results.map(row => row.name);
             managerNames.push("None");
