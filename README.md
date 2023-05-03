@@ -25,6 +25,8 @@ To install necessary dependencies, run the following command:
 
 To run the program, first open the integrated terminal under the 'db' folder, and run mysql. Then, type `source schema.sql;` to create your database and tables. Once you've created your schema, type `node index.js` at the root directory in the command line. This will provide you with a set of choices on how to interact with the company database, such as viewing, updating, and deleting employees, roles, and departments.
 
+Here is a video that walks through how to run the program: https://drive.google.com/file/d/1qaxH_G5kMDz2ltho30Ei9EDWBdSgahWK/view?usp=sharing
+
 ## License
 
 Please refer to the license in the repo.
