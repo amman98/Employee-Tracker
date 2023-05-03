@@ -19,7 +19,7 @@ function trackEmployees() {
             {
                 type: "list",
                 message: "What would you like to do?",
-                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employees By Manager", "View Employees By Department", "View Budget of Department", "Quit"],
+                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employees By Manager", "View Employees By Department", "Delete A Department", "Delete A Role", "Delete An Employee", "View Budget of Department", "Quit"],
                 name: "queryCompany",
             }
         ]).then(ans => {
@@ -49,6 +49,15 @@ function trackEmployees() {
             }
             else if(ans.queryCompany === "View Employees By Department") {
                 viewEmployeeByDepartment();
+            }
+            else if(ans.queryCompany === "Delete A Department") {
+                deleteDepartment();
+            }
+            else if(ans.queryCompany === "Delete A Role") {
+                deleteRole();
+            }
+            else if(ans.queryCompany === "Delete An Employee") {
+                deleteEmployee();
             }
             else if(ans.queryCompany === "View Budget of Department") {
                 viewDepartmentBudget();
@@ -285,6 +294,102 @@ function viewEmployeeByManager() {
                 // grabs all employee names where their manager id matches the one from the selected name prior
                 db.query('SELECT first_name, last_name FROM employee WHERE manager_id = (SELECT id FROM EMPLOYEE WHERE CONCAT(first_name, " ", last_name) = ?)', [ans.managerName], function(err, results) {
                     console.table(results);
+                    if(err) throw err;
+                    trackEmployees();
+                });
+            })
+    });
+}
+
+// deletes a department
+function deleteDepartment() {
+    //  grabs all names in the department table
+    db.query('SELECT name FROM department', function(err, results) {
+        const departmentNames = results.map(row => row.name);
+        
+        // checks if there are any departments
+        if(departmentNames.length === 0) {
+            console.log("There are no departments in the database to delete.");
+            trackEmployees();
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    message: "Which department would you like to delete?",
+                    choices: departmentNames,
+                    name: "depName",
+                }
+            ]).then(ans => {
+                // deletes selected department from table
+                db.query('DELETE FROM department WHERE name = ?', [ans.depName], function(err, results) {
+                    console.log(ans.depName + " has been deleted");
+                    if(err) throw err;
+                    trackEmployees();
+                });
+            })
+    });
+}
+
+// deletes a role
+function deleteRole() {
+    //  grabs all names in the role table
+    db.query('SELECT title FROM role', function(err, results) {
+        const roleTitles = results.map(row => row.title);
+        
+        // checks if there are any departments
+        if(roleTitles.length === 0) {
+            console.log("There are no roles in the database to delete.");
+            trackEmployees();
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    message: "Which role would you like to delete?",
+                    choices: roleTitles,
+                    name: "roleTitle",
+                }
+            ]).then(ans => {
+                // deletes selected role from table
+                db.query('DELETE FROM role WHERE title = ?', [ans.roleTitle], function(err, results) {
+                    console.log(ans.roleTitle + " has been deleted");
+                    if(err) throw err;
+                    trackEmployees();
+                });
+            })
+    });
+}
+
+// deletes an employee
+function deleteEmployee() {
+    //  grabs all names in the employee table
+    db.query('SELECT CONCAT(first_name, " ", last_name) AS name FROM employee', function(err, results) {
+        const employeeNames = results.map(row => row.name);
+        
+        // checks if there are any employees
+        if(employeeNames.length === 0) {
+            console.log("There are no employees in the database to delete.");
+            trackEmployees();
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    message: "Which employee would you like to delete?",
+                    choices: employeeNames,
+                    name: "empName",
+                }
+            ]).then(ans => {
+                // deletes selected department from table
+                db.query('DELETE FROM employee WHERE CONCAT(first_name, " ", last_name) = ?', [ans.empName], function(err, results) {
+                    console.log(ans.empName + " has been deleted");
                     if(err) throw err;
                     trackEmployees();
                 });
