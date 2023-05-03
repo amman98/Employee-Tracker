@@ -19,7 +19,7 @@ function trackEmployees() {
             {
                 type: "list",
                 message: "What would you like to do?",
-                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "Quit"],
+                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employee By Manager", "Quit"],
                 name: "queryCompany",
             }
         ]).then(ans => {
@@ -43,6 +43,9 @@ function trackEmployees() {
             }
             else if(ans.queryCompany === "Update Employee Role") {
                 updateEmployeeRole();
+            }
+            else if(ans.queryCompany === "View Employee By Manager") {
+                viewEmployeeByManager();
             }
             else if(ans.queryCompany === "Quit") {
                 return; // exit program
@@ -142,7 +145,7 @@ function addEmployee() {
         const roleTitles = results.map(row => row.title);
         if(roleTitles.length === 0) {
             console.log("Can't add employee as there are no roles to add them too.");
-            trackEmployees(); // can't add role if no department to add to
+            trackEmployees();
             return;
         }
 
@@ -175,20 +178,10 @@ function addEmployee() {
                         name: "managerName",
                     }
                 ]).then(ans => {
-                    db.query('SELECT id FROM employee WHERE CONCAT(first_name, " ", last_name) = ?', [ans.managerName], function(err, results) {
+                    db.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, (SELECT id FROM role WHERE title = ?), (SELECT temp.id FROM (SELECT id FROM employee WHERE CONCAT(first_name, " ", last_name) = ?) AS temp))', [ans.firstName, ans.lastName, ans.roleTitle, ans.managerName], function(err, results) {
+                        console.log("Added " + ans.firstName + " " + ans.lastName + " to the database");
                         if(err) throw err;
-                        if(ans.managerName == "None") {
-                            managerId = null;
-                        }
-                        else {
-                            const managerId = results[0].id;
-                        }
-
-                        db.query('INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES (?, ?, (SELECT id FROM role WHERE title = ?), ?)', [ans.firstName, ans.lastName, ans.roleTitle, managerId], function(err, results) {
-                            console.log("Added " + ans.firstName + " " + ans.lastName + " to the database");
-                            if(err) throw err;
-                            trackEmployees(); // recursively call trackEmployees()
-                        });
+                        trackEmployees(); // recursively call trackEmployees()
                     });
                 })
         });
@@ -201,7 +194,7 @@ function updateEmployeeRole() {
         const employeeNames = results.map(row => row.name);
         if(employeeNames.length === 0) {
             console.log("Can't update employee as there are no employees in database.");
-            trackEmployees(); // can't add role if no department to add to
+            trackEmployees();
             return;
         }
 
@@ -230,6 +223,38 @@ function updateEmployeeRole() {
                     });
                 })
         });
+    });
+}
+
+// displays employees under a selected manager
+function viewEmployeeByManager() {
+    //  grabs all managers in the employee table
+    db.query('SELECT DISTINCT CONCAT(m.first_name, " ", m.last_name) AS manager_name FROM employee e JOIN employee m ON e.manager_id = m.id ORDER BY manager_name', function(err, results) {
+        const managerNames = results.map(row => row.manager_name);
+        
+        // checks if there are any managers
+        if(managerNames.length === 0) {
+            console.log("There are no managers in the database to view.");
+            trackEmployees();
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    message: "Which manager's employees would you like to view?",
+                    choices: managerNames,
+                    name: "managerName",
+                }
+            ]).then(ans => {
+                // grabs all employee names where their manager id matches the one from the selected name prior
+                db.query('SELECT first_name, last_name FROM employee WHERE manager_id = (SELECT id FROM EMPLOYEE WHERE CONCAT(first_name, " ", last_name) = ?)', [ans.managerName], function(err, results) {
+                    console.table(results);
+                    if(err) throw err;
+                    trackEmployees();
+                });
+            })
     });
 }
 
