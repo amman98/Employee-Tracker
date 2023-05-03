@@ -19,7 +19,7 @@ function trackEmployees() {
             {
                 type: "list",
                 message: "What would you like to do?",
-                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employee By Manager", "View Budget of Department", "Quit"],
+                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employees By Manager", "View Employees By Department", "View Budget of Department", "Quit"],
                 name: "queryCompany",
             }
         ]).then(ans => {
@@ -44,8 +44,11 @@ function trackEmployees() {
             else if(ans.queryCompany === "Update Employee Role") {
                 updateEmployeeRole();
             }
-            else if(ans.queryCompany === "View Employee By Manager") {
+            else if(ans.queryCompany === "View Employees By Manager") {
                 viewEmployeeByManager();
+            }
+            else if(ans.queryCompany === "View Employees By Department") {
+                viewEmployeeByDepartment();
             }
             else if(ans.queryCompany === "View Budget of Department") {
                 viewDepartmentBudget();
@@ -281,6 +284,38 @@ function viewEmployeeByManager() {
             ]).then(ans => {
                 // grabs all employee names where their manager id matches the one from the selected name prior
                 db.query('SELECT first_name, last_name FROM employee WHERE manager_id = (SELECT id FROM EMPLOYEE WHERE CONCAT(first_name, " ", last_name) = ?)', [ans.managerName], function(err, results) {
+                    console.table(results);
+                    if(err) throw err;
+                    trackEmployees();
+                });
+            })
+    });
+}
+
+// displays all employees under a selected department
+function viewEmployeeByDepartment() {
+    //  grabs all names in the department table
+    db.query('SELECT name FROM department', function(err, results) {
+        const departmentNames = results.map(row => row.name);
+        
+        // checks if there are any departments
+        if(departmentNames.length === 0) {
+            console.log("There are no departments in the database to view.");
+            trackEmployees();
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    message: "Which department's employees would you like to view?",
+                    choices: departmentNames,
+                    name: "depName",
+                }
+            ]).then(ans => {
+                // grabs all employee names where their department id matches the one from the selected name prior
+                db.query('SELECT first_name, last_name FROM employee JOIN role ON role.id = role_id JOIN department ON role.department_id = department.id WHERE department.name = ?', [ans.depName], function(err, results) {
                     console.table(results);
                     if(err) throw err;
                     trackEmployees();
