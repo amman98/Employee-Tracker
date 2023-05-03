@@ -19,7 +19,7 @@ function trackEmployees() {
             {
                 type: "list",
                 message: "What would you like to do?",
-                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employees By Manager", "View Employees By Department", "Delete A Department", "Delete A Role", "Delete An Employee", "View Budget of Department", "Quit"],
+                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "Update Employee Manager", "View Employees By Manager", "View Employees By Department", "Delete A Department", "Delete A Role", "Delete An Employee", "View Budget of Department", "Quit"],
                 name: "queryCompany",
             }
         ]).then(ans => {
@@ -43,6 +43,9 @@ function trackEmployees() {
             }
             else if(ans.queryCompany === "Update Employee Role") {
                 updateEmployeeRole();
+            }
+            else if(ans.queryCompany === "Update Employee Manager") {
+                updateEmployeeManager();
             }
             else if(ans.queryCompany === "View Employees By Manager") {
                 viewEmployeeByManager();
@@ -261,6 +264,44 @@ function updateEmployeeRole() {
                 ]).then(ans => {
                     db.query('UPDATE employee JOIN role ON employee.role_id = role.id SET employee.role_id = (SELECT id FROM role WHERE title = ?) WHERE CONCAT(first_name, " ", last_name) = ?', [ans.roleTitle, ans.employeeName], function(err, results) {
                         console.log("Updated " + ans.employeeName + "'s role");
+                        if(err) throw err;
+                        trackEmployees();
+                    });
+                })
+        });
+    });
+}
+
+// updates an employee's manager
+function updateEmployeeManager() {
+    db.query('SELECT CONCAT(first_name, " ", last_name) AS name FROM employee', function(err, results) {
+        const employeeNames = results.map(row => row.name);
+        if(employeeNames.length === 0) {
+            console.log("Can't update employee as there are no employees in database.");
+            trackEmployees();
+            return;
+        }
+
+        db.query('SELECT CONCAT(first_name, " ", last_name) AS manager_name FROM employee', function(err, results) {
+            const managerNames = results.map(row => row.manager_name);
+
+            inquirer
+                .prompt([
+                    {
+                        type: "list",
+                        message: "Which employee's manager do you want to update?",
+                        choices: employeeNames,
+                        name: "employeeName",
+                    },
+                    {
+                        type: "list",
+                        message: "Which manager do you want to assign the selected employee?",
+                        choices: managerNames,
+                        name: "managerName",
+                    }
+                ]).then(ans => {
+                    db.query('UPDATE employee SET manager_id = (SELECT temp.manager_id FROM (SELECT id AS manager_id FROM employee WHERE CONCAT(first_name, " ", last_name) = ?) AS temp) WHERE CONCAT(first_name, " ", last_name) = ?', [ans.managerName, ans.employeeName], function(err, results) {
+                        console.log("Updated " + ans.employeeName + "'s manager");
                         if(err) throw err;
                         trackEmployees();
                     });
