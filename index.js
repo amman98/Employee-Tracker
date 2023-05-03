@@ -19,7 +19,7 @@ function trackEmployees() {
             {
                 type: "list",
                 message: "What would you like to do?",
-                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employee By Manager", "Quit"],
+                choices: ["View All Departments", "Add A Department", "View All Roles", "Add A Role", "View All Employees", "Add An Employee", "Update Employee Role", "View Employee By Manager", "View Budget of Department", "Quit"],
                 name: "queryCompany",
             }
         ]).then(ans => {
@@ -46,6 +46,9 @@ function trackEmployees() {
             }
             else if(ans.queryCompany === "View Employee By Manager") {
                 viewEmployeeByManager();
+            }
+            else if(ans.queryCompany === "View Budget of Department") {
+                viewDepartmentBudget();
             }
             else if(ans.queryCompany === "Quit") {
                 return; // exit program
@@ -78,6 +81,34 @@ function addDepartment() {
                 trackEmployees(); // recursively call trackEmployees()
             });
         })
+}
+
+// get total utilized budget for department
+function viewDepartmentBudget() {
+    db.query('SELECT name FROM department', function(err, results) {
+        const departmentNames = results.map(row => row.name);
+        if(departmentNames.length === 0) {
+            console.log("No department to check budget from.");
+            trackEmployees();
+            return;
+        }
+
+        inquirer
+            .prompt([
+                {
+                    type: "list",
+                    message: "Which department do you want to see the budget for?",
+                    choices: departmentNames,
+                    name: "depName",
+                }
+            ]).then(ans => {
+                db.query('SELECT SUM(salary) AS total_salary FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id WHERE department.name = ?', ans.depName, function(err, results) {
+                    console.table(results);
+                    if(err) throw err;
+                    trackEmployees(); // recursively call trackEmployees()
+                });
+            })
+    });
 }
 
 // retrieves all rows in the roles table
